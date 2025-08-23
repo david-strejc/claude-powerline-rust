@@ -73,6 +73,76 @@ sudo cp target/release/claude-powerline /usr/local/bin/
 copy target\release\claude-powerline.exe %USERPROFILE%\.local\bin\
 ```
 
+### Installation for Windooze Monkeyes
+
+Windows users can get this shit working with a few simple steps. Yes, it **WILL** correctly parse Claude files on Windows because:
+
+1. **Path Discovery**: Automatically finds Claude data in `%APPDATA%\Claude` and `%USERPROFILE%\.claude`
+2. **Path Separators**: Rust's `PathBuf` handles both `/` and `\` automatically
+3. **File Parsing**: JSONL files are identical format across all platforms
+4. **Environment Variables**: Uses `;` separator instead of `,` for Windows paths
+
+#### PowerShell Installation (Recommended)
+```powershell
+# Create local bin directory if it doesn't exist
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.local\bin"
+
+# Download and extract (replace with actual Windows release when available)
+Invoke-WebRequest -Uri "https://github.com/david-strejc/claude-powerline-rust/releases/download/v1.0.0/claude-powerline-v1.0.0-windows-x86_64.zip" -OutFile "claude-powerline.zip"
+Expand-Archive -Path "claude-powerline.zip" -DestinationPath "$env:USERPROFILE\.local\bin"
+
+# Add to PATH (add this to your PowerShell profile)
+$env:PATH += ";$env:USERPROFILE\.local\bin"
+
+# Test the installation
+claude-powerline --theme tokyo-night --style powerline --basename
+```
+
+#### CMD Installation (For Old School Monkeyes)
+```cmd
+REM Create directory
+mkdir "%USERPROFILE%\.local\bin"
+
+REM Download manually from GitHub releases, then:
+copy claude-powerline.exe "%USERPROFILE%\.local\bin\"
+
+REM Add to PATH permanently
+setx PATH "%PATH%;%USERPROFILE%\.local\bin"
+
+REM Test it
+claude-powerline --help
+```
+
+#### Claude Code Integration (Windows)
+Edit `%USERPROFILE%\.claude\settings.json`:
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "claude-powerline.exe --theme tokyo-night --style powerline --basename"
+  }
+}
+```
+
+#### Windows Terminal Setup
+Add to your Windows Terminal profile settings:
+```json
+{
+  "profiles": {
+    "defaults": {
+      "commandline": "powershell.exe",
+      "startingDirectory": "%USERPROFILE%",
+      "environment": {
+        "CLAUDE_POWERLINE_THEME": "tokyo-night",
+        "CLAUDE_POWERLINE_STYLE": "powerline"
+      }
+    }
+  }
+}
+```
+
+**Note**: Windows build will be available in future releases. For now, you'll need to cross-compile from Linux or build from source on Windows.
+
 ### Quick Test
 ```bash
 # Test with tokyo-night theme and powerline style
