@@ -1,35 +1,70 @@
 #!/bin/bash
 
-# Build claude-powerline for all platforms
-echo "Building claude-powerline v1.1.0 for all platforms..."
+# Build and release claude-powerline for all platforms
+VERSION=$(grep "^version" Cargo.toml | head -1 | cut -d'"' -f2)
+echo "Building claude-powerline v${VERSION} for all platforms..."
 
 # Create dist directory
 mkdir -p dist
+rm -f dist/*
 
-# Build for Linux x86_64
+# Build for current platform (Linux x86_64)
 echo "Building for Linux x86_64..."
-cargo build --release --target x86_64-unknown-linux-gnu
-cp target/x86_64-unknown-linux-gnu/release/claude-powerline dist/claude-powerline-linux-x64
+cargo build --release
+cp target/release/claude-powerline dist/claude-powerline-linux-x64
 
-# Build for Linux ARM64
-echo "Building for Linux ARM64..."
-cargo build --release --target aarch64-unknown-linux-gnu
-cp target/aarch64-unknown-linux-gnu/release/claude-powerline dist/claude-powerline-linux-arm64
+# Cross-compile for Windows if target is available
+if rustup target list | grep -q "x86_64-pc-windows-gnu (installed)"; then
+    echo "Building for Windows x86_64..."
+    cargo build --release --target x86_64-pc-windows-gnu
+    cp target/x86_64-pc-windows-gnu/release/claude-powerline.exe dist/claude-powerline-windows-x64.exe
+else
+    echo "Windows target not installed. Run: rustup target add x86_64-pc-windows-gnu"
+fi
 
-# Build for macOS x86_64
-echo "Building for macOS x86_64..."
-cargo build --release --target x86_64-apple-darwin
-cp target/x86_64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-x64
+# Note: macOS builds require macOS host or osxcross toolchain
+# Uncomment if running on macOS:
+# echo "Building for macOS x86_64..."
+# cargo build --release --target x86_64-apple-darwin
+# cp target/x86_64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-x64
+#
+# echo "Building for macOS ARM64..."
+# cargo build --release --target aarch64-apple-darwin
+# cp target/aarch64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-arm64
 
-# Build for macOS ARM64 (M1/M2)
-echo "Building for macOS ARM64..."
-cargo build --release --target aarch64-apple-darwin
-cp target/aarch64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-arm64
+# Package releases
+echo "Packaging releases..."
+cd dist
 
-# Build for Windows x86_64
-echo "Building for Windows x86_64..."
-cargo build --release --target x86_64-pc-windows-gnu
-cp target/x86_64-pc-windows-gnu/release/claude-powerline.exe dist/claude-powerline-windows-x64.exe
+# Linux tarball
+if [ -f claude-powerline-linux-x64 ]; then
+    tar czf claude-powerline-v${VERSION}-linux-x86_64.tar.gz claude-powerline-linux-x64
+    echo "Created: claude-powerline-v${VERSION}-linux-x86_64.tar.gz"
+fi
 
-echo "All builds complete! Binaries are in the dist/ directory"
-ls -lh dist/
+# Windows zip
+if [ -f claude-powerline-windows-x64.exe ]; then
+    zip -q claude-powerline-v${VERSION}-windows-x86_64.zip claude-powerline-windows-x64.exe
+    echo "Created: claude-powerline-v${VERSION}-windows-x86_64.zip"
+fi
+
+# macOS tarballs (if built)
+if [ -f claude-powerline-macos-x64 ]; then
+    tar czf claude-powerline-v${VERSION}-macos-x86_64.tar.gz claude-powerline-macos-x64
+    echo "Created: claude-powerline-v${VERSION}-macos-x86_64.tar.gz"
+fi
+
+if [ -f claude-powerline-macos-arm64 ]; then
+    tar czf claude-powerline-v${VERSION}-macos-arm64.tar.gz claude-powerline-macos-arm64
+    echo "Created: claude-powerline-v${VERSION}-macos-arm64.tar.gz"
+fi
+
+cd ..
+
+echo ""
+echo "Build complete! Packages in dist/ directory:"
+ls -lh dist/*.tar.gz dist/*.zip 2>/dev/null
+
+echo ""
+echo "To create a GitHub release:"
+echo "gh release create v${VERSION} dist/*.tar.gz dist/*.zip"
