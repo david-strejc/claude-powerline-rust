@@ -1,0 +1,19 @@
+Please perform a comprehensive comparison between the original TypeScript claude-powerline implementation and the new Rust implementation. 
+
+I need you to:
+
+1. **Find ALL missing features** from the original TypeScript that are not implemented in Rust
+2. **Focus especially on CLI options and configuration features** like the "strip path" option the user mentioned
+3. **Compare the command-line interface** - what options did the TypeScript version have that Rust doesn't?
+4. **Compare the display logic and formatting options** 
+5. **Compare configuration mechanisms** 
+6. **Look for any behavioral differences** in how segments are calculated or displayed
+
+The user specifically asked about a "strip path" option from the original TypeScript code - please identify this and any other missing CLI options or features.
+
+Please provide:
+- A detailed list of missing features
+- Specific code examples from TypeScript showing these features
+- Recommendations for what should be implemented in Rust
+
+The original TypeScript code is now available in the claude-powerline/ directory, and the Rust code is in src/.

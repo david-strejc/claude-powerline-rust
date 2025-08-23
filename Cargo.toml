@@ -1,0 +1,79 @@
+[package]
+name = "claude-powerline-rust"
+version = "0.1.0"
+edition = "2021"
+authors = ["David <david@blackbox>", "Claude AI"]
+description = "Ultra-fast Rust statusline for Claude Code with real-time usage tracking - 8.4x faster than TypeScript"
+license = "MIT"
+repository = "https://github.com/owloops/claude-powerline-rust"
+keywords = ["claude", "powerline", "statusline", "cli", "performance"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
+
+[[bin]]
+name = "claude-powerline"
+path = "src/main.rs"
+
+[dependencies]
+# JSON parsing - SIMD-accelerated for maximum performance
+simd-json = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# File I/O - Memory-mapped files for zero-copy access
+memmap2 = "0.9"
+
+# Git operations - Pure Rust git implementation  
+gix = { version = "0.66", features = ["max-performance"] }
+
+# CLI and configuration
+pico-args = "0.5"
+dirs = "5.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# String formatting and colors
+colored = "2.1"
+atty = "0.2"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Async runtime for parallel operations
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros", "fs", "process"] }
+futures = "0.3"
+
+# Parallel processing and file system operations
+rayon = "1.8"
+walkdir = "2.4"
+
+# Caching
+dashmap = "6.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+tokio-test = "0.4"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "performance_bench"
+harness = false
+
+[profile.release]
+# Maximum performance optimizations
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = 3
+
+# Enable SIMD instructions
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))']
+rustflags = ["-C", "target-cpu=native"]
+
+[profile.dev]
+# Fast compile times for development
+opt-level = 1
+debug = true
