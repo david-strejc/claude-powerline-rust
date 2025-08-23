@@ -25,7 +25,7 @@ impl BlockSegment {
     pub fn new() -> Self {
         Self {
             enabled: true,
-            display_type: "weighted".to_string(),
+            display_type: "tokens".to_string(),
             burn_type: "cost".to_string(),
         }
     }

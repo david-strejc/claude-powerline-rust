@@ -57,6 +57,8 @@ pub struct ParsedEntry {
     pub message: Option<MessageInfo>,
     #[serde(rename = "costUSD", skip_serializing_if = "Option::is_none")]
     pub cost_usd: Option<f64>,
+    #[serde(skip)]
+    pub source_file: Option<String>,  // Track which transcript file this entry came from
     #[serde(rename = "isSidechain", skip_serializing_if = "Option::is_none")]
     pub is_sidechain: Option<bool>,
     #[serde(flatten)]
@@ -295,6 +297,7 @@ fn parse_jsonl_line(line: &str) -> Result<Option<ParsedEntry>> {
         cost_usd,
         is_sidechain,
         raw,
+        source_file: None,  // Not used in legacy parser
     }))
 }
 

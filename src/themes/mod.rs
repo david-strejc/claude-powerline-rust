@@ -31,6 +31,7 @@ fn dark_theme() -> Theme {
     colors.insert("session".to_string(), ("#805ad5".to_string(), "#f7fafc".to_string()));
     colors.insert("context".to_string(), ("#e53e3e".to_string(), "#f7fafc".to_string()));
     colors.insert("metrics".to_string(), ("#38b2ac".to_string(), "#f7fafc".to_string()));
+    colors.insert("model".to_string(), ("#ed8936".to_string(), "#f7fafc".to_string()));
     
     Theme { colors }
 }
@@ -44,6 +45,7 @@ fn light_theme() -> Theme {
     colors.insert("session".to_string(), ("#d6bcfa".to_string(), "#1a202c".to_string()));
     colors.insert("context".to_string(), ("#feb2b2".to_string(), "#1a202c".to_string()));
     colors.insert("metrics".to_string(), ("#b2f5ea".to_string(), "#1a202c".to_string()));
+    colors.insert("model".to_string(), ("#fed7aa".to_string(), "#1a202c".to_string()));
     
     Theme { colors }
 }
@@ -57,6 +59,7 @@ fn nord_theme() -> Theme {
     colors.insert("session".to_string(), ("#b48ead".to_string(), "#eceff4".to_string()));
     colors.insert("context".to_string(), ("#bf616a".to_string(), "#eceff4".to_string()));
     colors.insert("metrics".to_string(), ("#88c0d0".to_string(), "#eceff4".to_string()));
+    colors.insert("model".to_string(), ("#d08770".to_string(), "#eceff4".to_string()));
     
     Theme { colors }
 }
@@ -70,6 +73,7 @@ fn tokyo_night_theme() -> Theme {
     colors.insert("session".to_string(), ("#bb9af7".to_string(), "#1a1b26".to_string()));
     colors.insert("context".to_string(), ("#f7768e".to_string(), "#1a1b26".to_string()));
     colors.insert("metrics".to_string(), ("#2ac3de".to_string(), "#1a1b26".to_string()));
+    colors.insert("model".to_string(), ("#ff9e64".to_string(), "#1a1b26".to_string()));
     
     Theme { colors }
 }
@@ -83,6 +87,7 @@ fn rose_pine_theme() -> Theme {
     colors.insert("session".to_string(), ("#eb6f92".to_string(), "#e0def4".to_string()));
     colors.insert("context".to_string(), ("#ebbcba".to_string(), "#191724".to_string()));
     colors.insert("metrics".to_string(), ("#9ccfd8".to_string(), "#191724".to_string()));
+    colors.insert("model".to_string(), ("#ebbcba".to_string(), "#191724".to_string()));
     
     Theme { colors }
 }

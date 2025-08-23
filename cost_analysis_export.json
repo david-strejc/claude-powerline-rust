@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-08-23T15:31:46.797506+00:00",
+  "analysis_window_hours": 5,
+  "total_entries": 1592,
+  "entries_with_cost_field": 0,
+  "entries_with_model_and_usage": 906,
+  "entries_with_only_usage": 0,
+  "model_distribution": {
+    "claude-sonnet-4-20250514": 527,
+    "claude-opus-4-1-20250805": 379
+  },
+  "total_cost_from_field": 0.0,
+  "total_cost_calculated": 106.50190169999988,
+  "discrepancy_count": 0,
+  "recommendation": "calculate_from_usage"
+}

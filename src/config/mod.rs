@@ -26,6 +26,7 @@ pub struct SegmentConfig {
     pub session: Option<SessionConfig>,
     pub context: Option<ContextConfig>,
     pub metrics: Option<MetricsConfig>,
+    pub model: Option<ModelConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,6 +98,11 @@ pub struct MetricsConfig {
     pub show_lines_added: Option<bool>,
     #[serde(rename = "showLinesRemoved")]
     pub show_lines_removed: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelConfig {
+    pub enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

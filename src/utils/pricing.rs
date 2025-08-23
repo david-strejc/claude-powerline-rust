@@ -42,6 +42,11 @@ impl PricingService {
         // Claude Sonnet 4 pricing
         pricing_table.insert("claude-sonnet-4".to_string(), ModelPricing::new(3.0, 15.0));
         pricing_table.insert("claude-4-sonnet".to_string(), ModelPricing::new(3.0, 15.0));
+        pricing_table.insert("claude-sonnet-4-20250514".to_string(), ModelPricing::new(3.0, 15.0));
+        
+        // Claude Opus 4.1 pricing
+        pricing_table.insert("claude-opus-4-1".to_string(), ModelPricing::new(15.0, 75.0));
+        pricing_table.insert("claude-opus-4-1-20250805".to_string(), ModelPricing::new(15.0, 75.0));
         
         // Claude 3.5 Haiku pricing
         pricing_table.insert("claude-3-5-haiku".to_string(), ModelPricing::new(0.80, 4.0));
@@ -143,31 +148,140 @@ impl PricingService {
         }
     }
 
-    /// Calculate total cost for a list of entries
+    /// Calculate total cost for a list of entries (handles cumulative token counts per session)
     pub fn calculate_total_cost(&self, entries: &[ParsedEntry]) -> Result<f64> {
+        use std::collections::HashMap;
+        
         let mut total_cost = 0.0;
         
+        // Group entries by session to handle cumulative counts properly
+        let mut sessions: HashMap<String, Vec<&ParsedEntry>> = HashMap::new();
+        
         for entry in entries {
-            match self.calculate_cost_for_entry(entry) {
-                Ok(cost) => total_cost += cost,
-                Err(_) => continue, // Skip entries we can't calculate costs for
+            let session_key = entry.source_file.clone()
+                .or_else(|| entry.raw.get("sessionId").and_then(|v| v.as_str()).map(String::from))
+                .unwrap_or_else(|| "unknown".to_string());
+            
+            sessions.entry(session_key).or_insert_with(Vec::new).push(entry);
+        }
+        
+        // Process each session separately
+        for (_session_key, session_entries) in sessions {
+            // Sort by timestamp to ensure proper delta calculation
+            let mut sorted_entries = session_entries;
+            sorted_entries.sort_by_key(|e| e.timestamp);
+            
+            // Track previous cumulative values for this session
+            let mut prev_input = 0u32;
+            let mut prev_output = 0u32;
+            let mut prev_cache_create = 0u32;
+            let mut prev_cache_read = 0u32;
+            
+            for entry in sorted_entries {
+                if let Some(message) = &entry.message {
+                    if let Some(usage) = &message.usage {
+                        let input_now = usage.input_tokens.unwrap_or(0);
+                        let output_now = usage.output_tokens.unwrap_or(0);
+                        let cache_create_now = usage.cache_creation_input_tokens.unwrap_or(0);
+                        let cache_read_now = usage.cache_read_input_tokens.unwrap_or(0);
+                        
+                        // Calculate deltas (new tokens since last message in this session)
+                        let delta_input = input_now.saturating_sub(prev_input);
+                        let delta_output = output_now.saturating_sub(prev_output);
+                        let delta_cache_create = cache_create_now.saturating_sub(prev_cache_create);
+                        let delta_cache_read = cache_read_now.saturating_sub(prev_cache_read);
+                        
+                        // Calculate cost for this entry's delta tokens
+                        if let Some(model) = &message.model {
+                            if let Ok(pricing) = self.get_model_pricing(model) {
+                                let input_cost = (delta_input as f64 / 1_000_000.0) * pricing.input;
+                                let output_cost = (delta_output as f64 / 1_000_000.0) * pricing.output;
+                                let cache_create_cost = (delta_cache_create as f64 / 1_000_000.0) * pricing.cache_write_5m;
+                                let cache_read_cost = (delta_cache_read as f64 / 1_000_000.0) * pricing.cache_read;
+                                
+                                total_cost += input_cost + output_cost + cache_create_cost + cache_read_cost;
+                            }
+                        }
+                        
+                        // Update previous values for next iteration
+                        prev_input = input_now;
+                        prev_output = output_now;
+                        prev_cache_create = cache_create_now;
+                        prev_cache_read = cache_read_now;
+                    } else {
+                        // No usage data - keep previous counters unchanged
+                        // DO NOT reset them as this would cause the next entry to be counted in full
+                    }
+                }
             }
         }
         
         Ok(total_cost)
     }
 
-    /// Calculate token breakdown for a list of entries
+    /// Calculate token breakdown for a list of entries (handles cumulative token counts per session)
     pub fn calculate_token_breakdown(&self, entries: &[ParsedEntry]) -> TokenBreakdown {
+        use std::collections::HashMap;
+        
         let mut breakdown = TokenBreakdown::default();
         
+        if entries.is_empty() {
+            return breakdown;
+        }
+        
+        // Group entries by session (source file)
+        let mut sessions: HashMap<String, Vec<&ParsedEntry>> = HashMap::new();
+        
         for entry in entries {
-            if let Some(message) = &entry.message {
-                if let Some(usage) = &message.usage {
-                    breakdown.input_tokens += usage.input_tokens.unwrap_or(0);
-                    breakdown.output_tokens += usage.output_tokens.unwrap_or(0);
-                    breakdown.cache_creation_input_tokens += usage.cache_creation_input_tokens.unwrap_or(0);
-                    breakdown.cache_read_input_tokens += usage.cache_read_input_tokens.unwrap_or(0);
+            let session_key = entry.source_file.clone()
+                .or_else(|| entry.raw.get("sessionId").and_then(|v| v.as_str()).map(String::from))
+                .unwrap_or_else(|| "unknown".to_string());
+            
+            sessions.entry(session_key).or_insert_with(Vec::new).push(entry);
+        }
+        
+        // Process each session separately
+        for (_session_key, session_entries) in sessions {
+            // Sort by timestamp to ensure proper delta calculation
+            let mut sorted_entries = session_entries;
+            sorted_entries.sort_by_key(|e| e.timestamp);
+            
+            // Track previous cumulative values for this session
+            let mut prev_input = 0u32;
+            let mut prev_output = 0u32;
+            let mut prev_cache_create = 0u32;
+            let mut prev_cache_read = 0u32;
+            
+            for entry in sorted_entries {
+                if let Some(message) = &entry.message {
+                    if let Some(usage) = &message.usage {
+                        let input_now = usage.input_tokens.unwrap_or(0);
+                        let output_now = usage.output_tokens.unwrap_or(0);
+                        let cache_create_now = usage.cache_creation_input_tokens.unwrap_or(0);
+                        let cache_read_now = usage.cache_read_input_tokens.unwrap_or(0);
+                        
+                        // Calculate deltas (new tokens since last message in this session)
+                        // Use saturating_sub to handle session boundaries where counts reset
+                        let delta_input = input_now.saturating_sub(prev_input);
+                        let delta_output = output_now.saturating_sub(prev_output);
+                        let delta_cache_create = cache_create_now.saturating_sub(prev_cache_create);
+                        let delta_cache_read = cache_read_now.saturating_sub(prev_cache_read);
+                        
+                        // Only add the delta (new tokens) not the cumulative total
+                        breakdown.input_tokens += delta_input;
+                        breakdown.output_tokens += delta_output;
+                        breakdown.cache_creation_input_tokens += delta_cache_create;
+                        breakdown.cache_read_input_tokens += delta_cache_read;
+                        
+                        // Update previous values for next iteration
+                        prev_input = input_now;
+                        prev_output = output_now;
+                        prev_cache_create = cache_create_now;
+                        prev_cache_read = cache_read_now;
+                    } else {
+                        // No usage data - keep previous counters unchanged
+                        // DO NOT reset them as this would cause the next entry to be counted in full
+                    }
                 }
             }
         }
@@ -175,30 +289,74 @@ impl PricingService {
         breakdown
     }
 
-    /// Calculate weighted tokens (applying model-specific multipliers)
+    /// Calculate weighted tokens (applying model-specific multipliers and handling cumulative counts)
     pub fn calculate_weighted_tokens(&self, entries: &[ParsedEntry]) -> u32 {
-        let mut weighted_total = 0u32;
+        use std::collections::HashMap;
+        
+        // Group entries by session (source file)
+        let mut sessions: HashMap<String, Vec<&ParsedEntry>> = HashMap::new();
         
         for entry in entries {
-            if let Some(message) = &entry.message {
-                if let Some(usage) = &message.usage {
-                    let total_tokens = usage.input_tokens.unwrap_or(0) +
-                        usage.output_tokens.unwrap_or(0) +
-                        usage.cache_creation_input_tokens.unwrap_or(0) +
-                        usage.cache_read_input_tokens.unwrap_or(0);
-                    
-                    let weight = if let Some(model) = &message.model {
-                        self.get_model_rate_limit_weight(model)
+            let session_key = entry.source_file.clone()
+                .or_else(|| entry.raw.get("sessionId").and_then(|v| v.as_str()).map(String::from))
+                .unwrap_or_else(|| "unknown".to_string());
+            
+            sessions.entry(session_key).or_insert_with(Vec::new).push(entry);
+        }
+        
+        let mut total_weighted = 0u32;
+        
+        // Process each session separately
+        for (_session_key, session_entries) in sessions {
+            // Sort by timestamp to ensure proper delta calculation
+            let mut sorted_entries = session_entries;
+            sorted_entries.sort_by_key(|e| e.timestamp);
+            
+            // Track previous cumulative values for this session
+            let mut prev_input = 0u32;
+            let mut prev_output = 0u32;
+            let mut prev_cache_create = 0u32;
+            let mut prev_cache_read = 0u32;
+            
+            for entry in sorted_entries {
+                if let Some(message) = &entry.message {
+                    if let Some(usage) = &message.usage {
+                        let input_now = usage.input_tokens.unwrap_or(0);
+                        let output_now = usage.output_tokens.unwrap_or(0);
+                        let cache_create_now = usage.cache_creation_input_tokens.unwrap_or(0);
+                        let cache_read_now = usage.cache_read_input_tokens.unwrap_or(0);
+                        
+                        // Calculate deltas for this session
+                        let delta_input = input_now.saturating_sub(prev_input);
+                        let delta_output = output_now.saturating_sub(prev_output);
+                        let delta_cache_create = cache_create_now.saturating_sub(prev_cache_create);
+                        let delta_cache_read = cache_read_now.saturating_sub(prev_cache_read);
+                        
+                        let delta_total = delta_input + delta_output + delta_cache_create + delta_cache_read;
+                        
+                        // Apply model weight
+                        let weight = if let Some(model) = &message.model {
+                            self.get_model_rate_limit_weight(model)
+                        } else {
+                            1
+                        };
+                        
+                        total_weighted += delta_total * weight;
+                        
+                        // Update previous values for next iteration
+                        prev_input = input_now;
+                        prev_output = output_now;
+                        prev_cache_create = cache_create_now;
+                        prev_cache_read = cache_read_now;
                     } else {
-                        1
-                    };
-                    
-                    weighted_total += total_tokens * weight;
+                        // No usage data - keep previous counters unchanged
+                        // DO NOT reset them as this would cause the next entry to be counted in full
+                    }
                 }
             }
         }
         
-        weighted_total
+        total_weighted
     }
 }
 

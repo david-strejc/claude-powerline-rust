@@ -141,6 +141,9 @@ impl DataAggregator {
         let reader = BufReader::new(file);
         let mut entries = Vec::new();
         
+        // Get the file path as string for source tracking
+        let source_file = file_path.to_string_lossy().to_string();
+        
         // Stream through JSONL file line by line
         for line in std::io::BufRead::lines(reader) {
             let line = line.context("Failed to read line from transcript file")?;
@@ -151,7 +154,11 @@ impl DataAggregator {
             }
             
             match self.parse_jsonl_line(line) {
-                Ok(Some(entry)) => entries.push(entry),
+                Ok(Some(mut entry)) => {
+                    // Set the source file for this entry
+                    entry.source_file = Some(source_file.clone());
+                    entries.push(entry);
+                },
                 Ok(None) => continue, // Skip entries without timestamp
                 Err(_) => continue, // Skip invalid lines silently
             }
@@ -207,6 +214,7 @@ impl DataAggregator {
             cost_usd,
             is_sidechain,
             raw,
+            source_file: None,  // Will be set by the caller
         }))
     }
 

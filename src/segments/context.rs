@@ -109,7 +109,7 @@ impl ContextSegment {
                     
                     // Constants matching TypeScript version
                     const CONTEXT_LIMIT: u32 = 200_000;  // 200K context limit
-                    const USABLE_LIMIT: u32 = 150_000;   // 75% of total (200K * 0.75)
+                    const USABLE_LIMIT: u32 = 154_000;   // 77% of total (200K * 0.77)
                     
                     // Calculate percentages
                     let percentage = ((context_length as f64 / CONTEXT_LIMIT as f64) * 100.0)
@@ -144,7 +144,7 @@ impl Default for ContextInfo {
             context_left_percentage: 100,
             usable_percentage: 0,
             max_tokens: 200000,
-            usable_tokens: 150000,
+            usable_tokens: 154000,
         }
     }
 }

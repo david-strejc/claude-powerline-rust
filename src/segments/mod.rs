@@ -4,6 +4,7 @@ pub mod session;
 pub mod git;
 pub mod context;
 pub mod metrics;
+pub mod model;
 
 pub use block::*;
 pub use today::*;
@@ -11,6 +12,7 @@ pub use session::*;
 pub use git::*;
 pub use context::*;
 pub use metrics::*;
+pub use model::*;
 
 use anyhow::Result;
 use std::collections::HashMap;

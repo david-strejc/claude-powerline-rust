@@ -125,8 +125,16 @@ async fn generate_statusline(config: &Config) -> Result<String> {
         }
     }
 
+    // Model segment
+    if config.segments.model.as_ref().map_or(true, |c| c.enabled) {
+        let model_segment = render_model_segment(&config, &theme).await?;
+        if !model_segment.is_empty() {
+            segments.push(model_segment);
+        }
+    }
+
     // Join segments with appropriate separators
-    let separator = if config.style == "powerline" { "⮀" } else { " " };
+    let separator = if config.style == "powerline" { " ⮀ " } else { "  " };
     Ok(segments.join(separator))
 }
 
@@ -244,7 +252,7 @@ async fn render_today_segment(config: &Config, theme: &themes::Theme) -> Result<
         return Ok(String::new());
     }
 
-    let mut parts = vec!["☉".to_string()];
+    let mut parts = vec!["💰".to_string()];
     
     match today_segment.display_type.as_str() {
         "cost" => {
@@ -277,7 +285,7 @@ async fn render_block_segment(config: &Config, theme: &themes::Theme) -> Result<
     let block_config = config.segments.block.as_ref().unwrap_or(&default_block_config);
     let mut block_segment = segments::BlockSegment::new();
     
-    block_segment.display_type = block_config.display_type.clone().unwrap_or_else(|| "weighted".to_string());
+    block_segment.display_type = block_config.display_type.clone().unwrap_or_else(|| "tokens".to_string());
     block_segment.burn_type = block_config.burn_type.clone().unwrap_or_else(|| "cost".to_string());
 
     let block_info = block_segment.get_active_block_info().await?;
@@ -286,7 +294,7 @@ async fn render_block_segment(config: &Config, theme: &themes::Theme) -> Result<
         return Ok(String::new());
     }
 
-    let mut parts = vec!["◱".to_string()];
+    let mut parts = vec!["🎪".to_string()];
     
     match block_segment.display_type.as_str() {
         "cost" => {
@@ -320,6 +328,30 @@ async fn render_block_segment(config: &Config, theme: &themes::Theme) -> Result<
     Ok(apply_theme_colors(&formatted, "block", theme))
 }
 
+async fn render_model_segment(config: &Config, theme: &themes::Theme) -> Result<String> {
+    let default_model_config = config::ModelConfig::default();
+    let model_config = config.segments.model.as_ref().unwrap_or(&default_model_config);
+    
+    if !model_config.enabled {
+        return Ok(String::new());
+    }
+
+    let mut model_segment = segments::ModelSegment::new();
+    let model_info = model_segment.get_current_model_info().await?;
+    
+    if model_info.display_name.is_none() {
+        return Ok(String::new());
+    }
+
+    let mut parts = vec!["🤖".to_string()];
+    if let Some(name) = model_info.display_name {
+        parts.push(name);
+    }
+
+    let text = parts.join(" ");
+    Ok(apply_theme_colors(&text, "model", theme))
+}
+
 async fn render_context_segment(config: &Config, theme: &themes::Theme) -> Result<String> {
     let default_context_config = config::ContextConfig::default();
     let context_config = config.segments.context.as_ref().unwrap_or(&default_context_config);
@@ -332,7 +364,7 @@ async fn render_context_segment(config: &Config, theme: &themes::Theme) -> Resul
     // Always show context info (even default values are useful)
     // Default shows "◔ 0 (100%)" indicating 100% context remaining
 
-    let mut parts = vec!["◔".to_string()];
+    let mut parts = vec!["🧠".to_string()];
     
     if context_segment.show_percentage_only {
         parts.push(format!("{}%", context_info.context_left_percentage));

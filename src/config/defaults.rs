@@ -1,5 +1,4 @@
 use crate::config::*;
-use std::collections::HashMap;
 
 impl Default for Config {
     fn default() -> Self {
@@ -24,6 +23,7 @@ impl Default for SegmentConfig {
             session: Some(SessionConfig::default()),
             context: Some(ContextConfig::default()),
             metrics: Some(MetricsConfig::default()),
+            model: Some(ModelConfig::default()),
         }
     }
 }
@@ -54,7 +54,7 @@ impl Default for BlockConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            display_type: Some("weighted".to_string()),
+            display_type: Some("tokens".to_string()),
             burn_type: Some("cost".to_string()),
         }
     }
@@ -98,6 +98,14 @@ impl Default for MetricsConfig {
             show_message_count: Some(true),
             show_lines_added: Some(true),
             show_lines_removed: Some(true),
+        }
+    }
+}
+
+impl Default for ModelConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
         }
     }
 }
