@@ -348,8 +348,22 @@ pub fn get_claude_paths() -> Result<Vec<PathBuf>> {
                 if user_claude.exists() {
                     paths.push(user_claude);
                 }
+            } else if cfg!(target_os = "macos") {
+                // macOS: ~/Library/Application Support/Claude, ~/.config/claude, ~/.claude
+                let app_support = home.join("Library").join("Application Support").join("Claude");
+                let config_path = home.join(".config").join("claude");
+                let claude_path = home.join(".claude");
+                
+                // Check in order of preference
+                if app_support.exists() {
+                    paths.push(app_support);
+                } else if config_path.exists() {
+                    paths.push(config_path);
+                } else if claude_path.exists() {
+                    paths.push(claude_path);
+                }
             } else {
-                // Unix-like: ~/.config/claude and ~/.claude
+                // Linux/Unix: ~/.config/claude and ~/.claude
                 let config_path = home.join(".config").join("claude");
                 let claude_path = home.join(".claude");
 

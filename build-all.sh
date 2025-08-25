@@ -22,15 +22,34 @@ else
     echo "Windows target not installed. Run: rustup target add x86_64-pc-windows-gnu"
 fi
 
-# Note: macOS builds require macOS host or osxcross toolchain
-# Uncomment if running on macOS:
-# echo "Building for macOS x86_64..."
-# cargo build --release --target x86_64-apple-darwin
-# cp target/x86_64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-x64
-#
-# echo "Building for macOS ARM64..."
-# cargo build --release --target aarch64-apple-darwin
-# cp target/aarch64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-arm64
+# macOS builds
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Native macOS build
+    echo "Building for macOS x86_64..."
+    cargo build --release --target x86_64-apple-darwin
+    cp target/x86_64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-x64
+    
+    echo "Building for macOS ARM64..."
+    cargo build --release --target aarch64-apple-darwin
+    cp target/aarch64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-arm64
+else
+    # Cross-compilation from Linux (requires osxcross)
+    if command -v x86_64-apple-darwin-gcc &> /dev/null; then
+        echo "Building for macOS x86_64 (cross-compile)..."
+        cargo build --release --target x86_64-apple-darwin
+        cp target/x86_64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-x64
+    else
+        echo "macOS x86_64 build skipped (osxcross not installed)"
+    fi
+    
+    if command -v aarch64-apple-darwin-gcc &> /dev/null; then
+        echo "Building for macOS ARM64 (cross-compile)..."
+        cargo build --release --target aarch64-apple-darwin
+        cp target/aarch64-apple-darwin/release/claude-powerline dist/claude-powerline-macos-arm64
+    else
+        echo "macOS ARM64 build skipped (osxcross not installed)"
+    fi
+fi
 
 # Package releases
 echo "Packaging releases..."
