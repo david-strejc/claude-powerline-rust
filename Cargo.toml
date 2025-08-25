@@ -1,6 +1,6 @@
 [package]
 name = "claude-powerline-rust"
-version = "1.1.1"
+version = "1.2.0"
 edition = "2021"
 authors = ["David <david@blackbox>", "Claude AI"]
 description = "Ultra-fast Rust statusline for Claude Code with real-time usage tracking - 8.4x faster than TypeScript"
