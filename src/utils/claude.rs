@@ -367,9 +367,11 @@ pub fn get_claude_paths() -> Result<Vec<PathBuf>> {
                 let config_path = home.join(".config").join("claude");
                 let claude_path = home.join(".claude");
 
+                // Check both paths and add them if they exist (config first)
                 if config_path.exists() {
                     paths.push(config_path);
-                } else if claude_path.exists() {
+                }
+                if claude_path.exists() {
                     paths.push(claude_path);
                 }
             }

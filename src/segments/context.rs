@@ -55,7 +55,25 @@ impl ContextSegment {
 
     /// Find the current session transcript file
     async fn find_current_session_transcript(&self) -> Result<Option<std::path::PathBuf>> {
-        // Try to find recent transcript files in Claude projects
+        // Try to get specific session ID first (same logic as session segment)
+        if let Ok(session_id) = std::env::var("CLAUDE_SESSION_ID") {
+            debug_with_context("context", &format!("Using session ID from env: {}", session_id));
+            match crate::utils::claude::find_transcript_file(&session_id).await {
+                Ok(Some(transcript_path)) => {
+                    debug_with_context("context", &format!("Found specific session transcript: {}", transcript_path.display()));
+                    return Ok(Some(transcript_path));
+                }
+                Ok(None) => {
+                    debug_with_context("context", &format!("Session transcript not found for ID: {}", session_id));
+                }
+                Err(e) => {
+                    debug_with_context("context", &format!("Error finding session transcript: {}", e));
+                }
+            }
+        }
+
+        // Fallback: find most recent transcript file in Claude projects
+        debug_with_context("context", "No session ID found, using most recent transcript");
         let claude_paths = crate::utils::claude::get_claude_paths()?;
         let project_paths = crate::utils::claude::find_project_paths(&claude_paths).await?;
         
